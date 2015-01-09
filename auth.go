@@ -14,6 +14,8 @@ type authReq struct {
 	Password string   `xml:"value"`
 }
 
+// Authenticate a user & password against Crowd. Returns error on failure
+// or account lockout. Success is a populated User with nil error.
 func (c *Crowd) Authenticate(user string, pass string) (User, error) {
 	u := User{}
 

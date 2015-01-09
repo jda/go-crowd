@@ -12,6 +12,7 @@ type Crowd struct {
 	cookies http.CookieJar
 }
 
+// initialize & get Crowd object
 func New(appuser string, apppass string, baseurl string) (Crowd, error) {
 	cr := Crowd{
 		user:   appuser,
