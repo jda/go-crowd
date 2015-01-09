@@ -8,6 +8,7 @@ import (
 	"net/http/cookiejar"
 )
 
+// Crowd represents your Crowd (client) Application settings
 type Crowd struct {
 	user    string
 	passwd  string

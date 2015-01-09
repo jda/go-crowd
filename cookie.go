@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// CookieConfig holds configuration values needed to set a Crowd SSO cookie.
 type CookieConfig struct {
 	XMLName struct{} `xml:"cookie-config"`
 	Domain  string   `xml:"domain"`
