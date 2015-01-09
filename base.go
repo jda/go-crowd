@@ -1,3 +1,6 @@
+// Package crowd provides methods for interacting with the
+// Atlassian Crowd authentication, directory integration, and
+// Single Sign-On system.
 package crowd
 
 import (
