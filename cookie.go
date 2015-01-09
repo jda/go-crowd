@@ -14,7 +14,7 @@ type CookieConfig struct {
 	Name    string   `xml:"name"`
 }
 
-// Get setting for SSO cookie
+// GetCookieConfig returns settings needed to set a Crowd SSO cookie.
 func (c *Crowd) GetCookieConfig() (CookieConfig, error) {
 	cc := CookieConfig{}
 
