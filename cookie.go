@@ -32,7 +32,7 @@ func (c *Crowd) GetCookieConfig() (CookieConfig, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return cc, fmt.Errorf("Request failed: %s\n", resp.Status)
+		return cc, fmt.Errorf("request failed: %s\n", resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

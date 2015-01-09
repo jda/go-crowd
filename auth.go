@@ -63,7 +63,7 @@ func (c *Crowd) Authenticate(user string, pass string) (User, error) {
 			return u, err
 		}
 	default:
-		return u, fmt.Errorf("Request failed: %s\n", resp.Status)
+		return u, fmt.Errorf("request failed: %s\n", resp.Status)
 	}
 
 	return u, nil
