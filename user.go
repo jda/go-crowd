@@ -1,5 +1,6 @@
 package crowd
 
+// User represents a user in Crowd
 type User struct {
 	XMLName     struct{} `xml:"user"`
 	UserName    string   `xml:"name,attr"`
