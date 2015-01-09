@@ -19,7 +19,7 @@ func New(appuser string, apppass string, baseurl string) (Crowd, error) {
 		url:    baseurl,
 	}
 
-	// make sure URL ends with '/'
+	// TODO make sure URL ends with '/'
 
 	cj, err := cookiejar.New(nil)
 	if err != nil {
