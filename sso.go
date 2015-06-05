@@ -1,4 +1,4 @@
-package crowd
+package crowd // import "go.jona.me/crowd"
 
 import (
 	"bytes"
@@ -127,7 +127,7 @@ func (c *Crowd) ValidateSession(token string, clientaddr string) (Session, error
 	if err != nil {
 		return s, err
 	}
-	fmt.Printf("SSO Validate got code %d\n", resp.StatusCode)
+
 	switch resp.StatusCode {
 	case 400:
 		er := Error{}
