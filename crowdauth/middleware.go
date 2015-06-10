@@ -2,7 +2,7 @@
 //
 // Goals:
 //  1) drop-in authentication against Crowd SSO
-//  2) make it easy to use Crowd SSO as part of your own auth
+//  2) make it easy to use Crowd SSO as part of your own auth flow
 package crowdauth // import "go.jona.me/crowd/crowdauth"
 
 import (
@@ -11,6 +11,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"time"
 )
 
 type SSO struct {
@@ -18,12 +19,17 @@ type SSO struct {
 	LoginPage           AuthLoginPage
 	LoginTemplate       *template.Template
 	ClientAddressFinder ClientAddressFinder
+	CookieConfig        crowd.CookieConfig
 }
 
 // The AuthLoginPage type extends the normal http.HandlerFunc type
 // with a boolean return to indicate login success or failure.
 type AuthLoginPage func(http.ResponseWriter, *http.Request, *SSO) bool
 
+// ClientAddressFinder type represents a function that returns the
+// end-user's IP address, allowing you to handle cases where the address
+// is masked by proxy servers etc by checking headers or whatever to find
+// the user's address
 type ClientAddressFinder func(*http.Request) (string, error)
 
 var authErr string = "unauthorized, login required"
@@ -38,7 +44,8 @@ func DefaultClientAddressFinder(r *http.Request) (addr string, err error) {
 }
 
 // New returns creates a new instance of SSO
-func New(user string, password string, crowdURL string) (s SSO, err error) {
+func New(user string, password string, crowdURL string) (s *SSO, err error) {
+	s = &SSO{}
 	s.LoginPage = loginPage
 	s.ClientAddressFinder = DefaultClientAddressFinder
 	s.LoginTemplate = template.Must(template.New("authPage").Parse(defLoginPage))
@@ -48,6 +55,10 @@ func New(user string, password string, crowdURL string) (s SSO, err error) {
 		return s, err
 	}
 	s.CrowdApp = &cwd
+	s.CookieConfig, err = s.CrowdApp.GetCookieConfig()
+	if err != nil {
+		return s, err
+	}
 
 	return s, nil
 }
@@ -65,42 +76,37 @@ func (s *SSO) Handler(h http.Handler) http.Handler {
 }
 
 func (s *SSO) loginHandler(w http.ResponseWriter, r *http.Request) bool {
-	cc, err := s.CrowdApp.GetCookieConfig()
-	if err != nil {
-		http.Error(w, "service error", http.StatusInternalServerError)
-		return false
-	}
+	ck, err := r.Cookie(s.CookieConfig.Name)
 
-	ck, err := r.Cookie(cc.Name)
 	if err == http.ErrNoCookie {
 		// no cookie so show login page if GET
 		// if POST check if login and handle
 		// if fail, show login page with message
 		if r.Method == "GET" {
 			s.LoginPage(w, r, s)
-			return false
 		} else if r.Method == "POST" {
 			authOK := s.LoginPage(w, r, s)
-			if authOK != true {
+			if authOK == true {
+				return true
+			} else {
 				log.Printf("crowdauth: authentication failed\n")
-				return false
 			}
 		} else {
 			http.Error(w, authErr, http.StatusUnauthorized)
-			return false
 		}
+		return false
 	} else {
 		// validate cookie or show login page
 		host, err := s.ClientAddressFinder(r)
 		if err != nil {
 			log.Printf("crowdauth: could not get remote addr: %s\n", err)
+			return false
 		}
 
 		_, err = s.CrowdApp.ValidateSession(ck.Value, host)
 		if err != nil {
 			log.Printf("crowdauth: could not validate cookie, deleting because: %s\n", err)
-			ck.MaxAge = -1
-			http.SetCookie(w, ck)
+			s.EndSession(w, r)
 			s.LoginPage(w, r, s)
 			return false
 		}
@@ -115,21 +121,38 @@ func (s *SSO) Login(user string, pass string, addr string) (cs crowd.Session, er
 	return cs, err
 }
 
-func (s *SSO) StartSession(w http.ResponseWriter, cs crowd.Session) (err error) {
-	cc, err := s.CrowdApp.GetCookieConfig()
-	if err != nil {
-		return err
-	}
+func (s *SSO) Logout(w http.ResponseWriter, r *http.Request, newURL string) {
+	s.EndSession(w, r)
+	http.Redirect(w, r, newURL, http.StatusTemporaryRedirect)
+}
 
+func (s *SSO) StartSession(w http.ResponseWriter, cs crowd.Session) (err error) {
 	ck := http.Cookie{
-		Name:    cc.Name,
-		Domain:  cc.Domain,
-		Secure:  false,
+		Name:    s.CookieConfig.Name,
+		Domain:  s.CookieConfig.Domain,
+		Secure:  s.CookieConfig.Secure,
 		Value:   cs.Token,
 		Expires: cs.Expires,
 	}
 	http.SetCookie(w, &ck)
 	return nil
+}
+
+func (s *SSO) EndSession(w http.ResponseWriter, r *http.Request) {
+	currentCookie, _ := r.Cookie(s.CookieConfig.Name)
+	newCookie := &http.Cookie{
+		Name:    s.CookieConfig.Name,
+		Domain:  s.CookieConfig.Domain,
+		Secure:  s.CookieConfig.Secure,
+		MaxAge:  -1,
+		Expires: time.Unix(1, 0),
+		Value:   "LOGGED-OUT",
+	}
+	s.CrowdApp.InvalidateSession(currentCookie.Value)
+
+	log.Printf("Got cookie to remove: %+v\n", currentCookie)
+	log.Printf("Removal cookie: %+v\n", newCookie)
+	http.SetCookie(w, newCookie)
 }
 
 func loginPage(w http.ResponseWriter, r *http.Request, s *SSO) bool {
