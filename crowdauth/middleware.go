@@ -9,7 +9,6 @@ import (
 	"go.jona.me/crowd"
 	"html/template"
 	"log"
-	"net"
 	"net/http"
 	"time"
 )
@@ -35,12 +34,7 @@ type ClientAddressFinder func(*http.Request) (string, error)
 var authErr string = "unauthorized, login required"
 
 func DefaultClientAddressFinder(r *http.Request) (addr string, err error) {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return "", err
-	}
-
-	return host, nil
+	return r.RemoteAddr, nil
 }
 
 // New returns creates a new instance of SSO
