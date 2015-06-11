@@ -81,7 +81,9 @@ func (s *SSO) loginHandler(w http.ResponseWriter, r *http.Request) bool {
 		} else if r.Method == "POST" {
 			authOK := s.LoginPage(w, r, s)
 			if authOK == true {
-				return true
+				// Redirect for fresh pass through auth etc on success
+				http.Redirect(w, r, r.RequestURI, http.StatusTemporaryRedirect)
+				return false
 			} else {
 				log.Printf("crowdauth: authentication failed\n")
 			}
