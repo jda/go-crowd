@@ -1,5 +1,13 @@
 package crowd
 
+import (
+	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+)
+
 // User represents a user in Crowd
 type User struct {
 	XMLName     struct{} `xml:"user"`
@@ -10,4 +18,47 @@ type User struct {
 	Email       string   `xml:"email"`
 	Active      bool     `xml:"active"`
 	Key         string   `xml:"key"`
+}
+
+// GetUser retrieves user information
+func (c *Crowd) GetUser(user string) (User, error) {
+	u := User{}
+
+	v := url.Values{}
+	v.Set("username", user)
+	url := c.url + "rest/usermanagement/1/user?" + v.Encode()
+	client := http.Client{Jar: c.cookies}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return u, err
+	}
+	req.SetBasicAuth(c.user, c.passwd)
+	req.Header.Set("Accept", "application/xml")
+	req.Header.Set("Content-Type", "application/xml")
+	resp, err := client.Do(req)
+	if err != nil {
+		return u, err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 404:
+		return u, fmt.Errorf("user not found")
+	case 200:
+		// fall through switch without returning
+	default:
+		return u, fmt.Errorf("request failed: %s\n", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return u, err
+	}
+
+	err = xml.Unmarshal(body, &u)
+	if err != nil {
+		return u, err
+	}
+
+	return u, nil
 }
