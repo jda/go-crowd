@@ -37,7 +37,7 @@ func DefaultClientAddressFinder(r *http.Request) (addr string, err error) {
 	return r.RemoteAddr, nil
 }
 
-// New returns creates a new instance of SSO
+// New creates a new instance of SSO
 func New(user string, password string, crowdURL string) (s *SSO, err error) {
 	s = &SSO{}
 	s.LoginPage = loginPage
