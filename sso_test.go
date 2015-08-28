@@ -36,7 +36,7 @@ func TestSSOLifeCycle(t *testing.T) {
 		t.Errorf("Token was empty so we didn't get/decode a response from NewSession")
 	}
 
-	// test get info for session we just created
+	// test validate for session we just created
 	si, err := c.ValidateSession(a.Token, addr)
 	if err != nil {
 		t.Errorf("Error validating session: %s\n", err)
@@ -46,6 +46,14 @@ func TestSSOLifeCycle(t *testing.T) {
 
 	if si.Token == "" {
 		t.Errorf("Token was empty so we didn't get/decode a response from ValidateSession")
+	}
+
+	// test get info for session
+	sdat, err := c.GetSession(a.Token)
+	if err != nil {
+		t.Errorf("Error getting session: %s\n", err)
+	} else {
+		t.Logf("Got session: %+v\n", sdat)
 	}
 
 	// test invalidating session

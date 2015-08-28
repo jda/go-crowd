@@ -12,7 +12,9 @@ import (
 // Session represents a single sign-on (SSO) session in Crowd
 type Session struct {
 	XMLName struct{}  `xml:"session"`
+	Expand  string    `xml:"expand,attr"`
 	Token   string    `xml:"token"`
+	User    User      `xml:"user,omitempty"`
 	Created time.Time `xml:"created-date"`
 	Expires time.Time `xml:"expiry-date"`
 }
@@ -177,4 +179,43 @@ func (c *Crowd) InvalidateSession(token string) error {
 	}
 
 	return nil
+}
+
+// Get SSO session information
+func (c *Crowd) GetSession(token string) (s Session, err error) {
+	client := http.Client{Jar: c.cookies}
+	url := c.url + "rest/usermanagement/1/session/" + token
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return s, err
+	}
+	req.SetBasicAuth(c.user, c.passwd)
+	req.Header.Set("Accept", "application/xml")
+	req.Header.Set("Content-Type", "application/xml")
+	resp, err := client.Do(req)
+	if err != nil {
+		return s, err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 404:
+		return s, fmt.Errorf("session not found")
+	case 200:
+		// fall through switch without returning
+	default:
+		return s, fmt.Errorf("request failed: %s\n", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return s, err
+	}
+
+	err = xml.Unmarshal(body, &s)
+	if err != nil {
+		return s, err
+	}
+
+	return s, nil
 }
