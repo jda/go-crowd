@@ -6,6 +6,7 @@
 package crowdauth // import "go.jona.me/crowd/crowdauth"
 
 import (
+	"errors"
 	"go.jona.me/crowd"
 	"html/template"
 	"log"
@@ -150,6 +151,21 @@ func (s *SSO) EndSession(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Got cookie to remove: %+v\n", currentCookie)
 	log.Printf("Removal cookie: %+v\n", newCookie)
 	http.SetCookie(w, newCookie)
+}
+
+// Get User information for the current session (by cookie)
+func (s *SSO) GetUser(r *http.Request) (u crowd.User, err error) {
+	currentCookie, err := r.Cookie(s.CookieConfig.Name)
+	if err == http.ErrNoCookie {
+		return u, errors.New("no session cookie")
+	}
+
+	userSession, err := s.CrowdApp.GetSession(currentCookie.Value)
+	if err != nil {
+		return u, errors.New("session not valid")
+	}
+
+	return userSession.User, nil
 }
 
 func loginPage(w http.ResponseWriter, r *http.Request, s *SSO) bool {
