@@ -181,7 +181,7 @@ func (c *Crowd) InvalidateSession(token string) error {
 	return nil
 }
 
-// Get SSO session information
+// Get SSO session information by token
 func (c *Crowd) GetSession(token string) (s Session, err error) {
 	client := http.Client{Jar: c.cookies}
 	url := c.url + "rest/usermanagement/1/session/" + token
