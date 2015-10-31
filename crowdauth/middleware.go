@@ -122,7 +122,8 @@ func (s *SSO) Logout(w http.ResponseWriter, r *http.Request, newURL string) {
 	http.Redirect(w, r, newURL, http.StatusTemporaryRedirect)
 }
 
-func (s *SSO) StartSession(w http.ResponseWriter, cs crowd.Session) (err error) {
+// StartSession sets a Crowd session cookie.
+func (s *SSO) StartSession(w http.ResponseWriter, cs crowd.Session) {
 	ck := http.Cookie{
 		Name:    s.CookieConfig.Name,
 		Domain:  s.CookieConfig.Domain,
@@ -131,9 +132,9 @@ func (s *SSO) StartSession(w http.ResponseWriter, cs crowd.Session) (err error) 
 		Expires: cs.Expires,
 	}
 	http.SetCookie(w, &ck)
-	return nil
 }
 
+// EndSession invalidates the current Crowd session and cookie
 func (s *SSO) EndSession(w http.ResponseWriter, r *http.Request) {
 	currentCookie, _ := r.Cookie(s.CookieConfig.Name)
 	newCookie := &http.Cookie{
@@ -172,12 +173,7 @@ func loginPage(w http.ResponseWriter, r *http.Request, s *SSO) bool {
 			return false
 		}
 
-		err = s.StartSession(w, sess)
-		if err != nil {
-			log.Printf("crowdauth: could not save session: %s\n", err)
-			showLoginPage(w, s)
-			return false
-		}
+		s.StartSession(w, sess)
 	} else {
 		return false
 	}
