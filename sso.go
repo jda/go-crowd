@@ -1,4 +1,4 @@
-package crowd // import "go.jona.me/crowd"
+package crowd
 
 import (
 	"bytes"

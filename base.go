@@ -1,7 +1,7 @@
 // Package crowd provides methods for interacting with the
 // Atlassian Crowd authentication, directory integration, and
 // Single Sign-On system.
-package crowd // import "go.jona.me/crowd"
+package crowd
 
 import (
 	"net/http"
