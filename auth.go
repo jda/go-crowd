@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type authReq struct {
@@ -28,6 +29,11 @@ func (c *Crowd) Authenticate(user string, pass string) (User, error) {
 
 	v := url.Values{}
 	v.Set("username", user)
+
+	if !strings.HasSuffix(c.url, "/") {
+		c.url += "/"
+	}
+
 	url := c.url + "rest/usermanagement/1/authentication?" + v.Encode()
 
 	client := http.Client{Jar: c.cookies}
@@ -63,7 +69,7 @@ func (c *Crowd) Authenticate(user string, pass string) (User, error) {
 			return u, err
 		}
 	default:
-		return u, fmt.Errorf("request failed: %s\n", resp.Status)
+		return u, fmt.Errorf("request failed: %s", resp.Status)
 	}
 
 	return u, nil
