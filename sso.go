@@ -56,7 +56,7 @@ func (c *Crowd) NewSession(user string, pass string, address string) (Session, e
 
 	url := c.url + "rest/usermanagement/1/session"
 
-	client := http.Client{Jar: c.cookies}
+	c.Client.Jar = c.cookies
 	req, err := http.NewRequest("POST", url, sarBuf)
 	if err != nil {
 		return s, err
@@ -64,7 +64,7 @@ func (c *Crowd) NewSession(user string, pass string, address string) (Session, e
 	req.SetBasicAuth(c.user, c.passwd)
 	req.Header.Set("Accept", "application/xml")
 	req.Header.Set("Content-Type", "application/xml")
-	resp, err := client.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		return s, err
 	}
@@ -112,7 +112,7 @@ func (c *Crowd) ValidateSession(token string, clientaddr string) (Session, error
 
 	url := c.url + "rest/usermanagement/1/session/" + token
 
-	client := http.Client{Jar: c.cookies}
+	c.Client.Jar = c.cookies
 	req, err := http.NewRequest("POST", url, svvfBuf)
 	if err != nil {
 		return s, err
@@ -120,7 +120,7 @@ func (c *Crowd) ValidateSession(token string, clientaddr string) (Session, error
 	req.SetBasicAuth(c.user, c.passwd)
 	req.Header.Set("Accept", "application/xml")
 	req.Header.Set("Content-Type", "application/xml")
-	resp, err := client.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		return s, err
 	}
@@ -161,7 +161,7 @@ func (c *Crowd) ValidateSession(token string, clientaddr string) (Session, error
 
 // Invalidate SSO session token. Returns error on failure.
 func (c *Crowd) InvalidateSession(token string) error {
-	client := http.Client{Jar: c.cookies}
+	c.Client.Jar = c.cookies
 	req, err := http.NewRequest("DELETE", c.url+"rest/usermanagement/1/session/"+token, nil)
 	if err != nil {
 		return err
@@ -169,7 +169,7 @@ func (c *Crowd) InvalidateSession(token string) error {
 	req.SetBasicAuth(c.user, c.passwd)
 	req.Header.Set("Accept", "application/xml")
 	req.Header.Set("Content-Type", "application/xml")
-	resp, err := client.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func (c *Crowd) InvalidateSession(token string) error {
 
 // Get SSO session information by token
 func (c *Crowd) GetSession(token string) (s Session, err error) {
-	client := http.Client{Jar: c.cookies}
+	c.Client.Jar = c.cookies
 	url := c.url + "rest/usermanagement/1/session/" + token
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -192,7 +192,7 @@ func (c *Crowd) GetSession(token string) (s Session, err error) {
 	req.SetBasicAuth(c.user, c.passwd)
 	req.Header.Set("Accept", "application/xml")
 	req.Header.Set("Content-Type", "application/xml")
-	resp, err := client.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		return s, err
 	}

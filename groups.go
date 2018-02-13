@@ -41,14 +41,14 @@ func (c *Crowd) GetGroups(user string, donested bool) ([]*Group, error) {
 	}
 
 	url := c.url + "rest/usermanagement/1/user/group/" + endpoint + "?" + v.Encode()
-	client := http.Client{Jar: c.cookies}
+	c.Client.Jar = c.cookies
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return groupList.Groups, err
 	}
 	req.SetBasicAuth(c.user, c.passwd)
 	req.Header.Set("Accept", "application/json")
-	resp, err := client.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		return groupList.Groups, err
 	}
