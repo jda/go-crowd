@@ -47,7 +47,7 @@ func (c *Crowd) GetUser(user string) (User, error) {
 	case 200:
 		// fall through switch without returning
 	default:
-		return u, fmt.Errorf("request failed: %s\n", resp.Status)
+		return u, fmt.Errorf("request failed: %s", resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

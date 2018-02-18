@@ -40,7 +40,7 @@ type sessionValidationValidationFactor struct {
 	ValidationFactors []sessionValidationFactor `xml:"validation-factor"`
 }
 
-// Authenticate a user and start a SSO session if valid.
+// NewSession authenticates a user and starts a SSO session if valid.
 func (c *Crowd) NewSession(user string, pass string, address string) (Session, error) {
 	s := Session{}
 
@@ -89,13 +89,13 @@ func (c *Crowd) NewSession(user string, pass string, address string) (Session, e
 			return s, err
 		}
 	default:
-		return s, fmt.Errorf("request failed: %s\n", resp.Status)
+		return s, fmt.Errorf("request failed: %s", resp.Status)
 	}
 
 	return s, nil
 }
 
-// Validate a SSO token against Crowd. Returns error on failure
+// ValidateSession validates a SSO token against Crowd. Returns error on failure
 // or account lockout. Success is a populated Session with nil error.
 func (c *Crowd) ValidateSession(token string, clientaddr string) (Session, error) {
 	s := Session{}
@@ -153,13 +153,13 @@ func (c *Crowd) ValidateSession(token string, clientaddr string) (Session, error
 			return s, err
 		}
 	default:
-		return s, fmt.Errorf("request failed: %s\n", resp.Status)
+		return s, fmt.Errorf("request failed: %s", resp.Status)
 	}
 
 	return s, nil
 }
 
-// Invalidate SSO session token. Returns error on failure.
+// InvalidateSession invalidates SSO session token. Returns error on failure.
 func (c *Crowd) InvalidateSession(token string) error {
 	client := http.Client{Jar: c.cookies}
 	req, err := http.NewRequest("DELETE", c.url+"rest/usermanagement/1/session/"+token, nil)
@@ -175,13 +175,13 @@ func (c *Crowd) InvalidateSession(token string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 204 {
-		return fmt.Errorf("request failed: %s\n", resp.Status)
+		return fmt.Errorf("request failed: %s", resp.Status)
 	}
 
 	return nil
 }
 
-// Get SSO session information by token
+// GetSession gets SSO session information by token
 func (c *Crowd) GetSession(token string) (s Session, err error) {
 	client := http.Client{Jar: c.cookies}
 	url := c.url + "rest/usermanagement/1/session/" + token
@@ -204,7 +204,7 @@ func (c *Crowd) GetSession(token string) (s Session, err error) {
 	case 200:
 		// fall through switch without returning
 	default:
-		return s, fmt.Errorf("request failed: %s\n", resp.Status)
+		return s, fmt.Errorf("request failed: %s", resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
