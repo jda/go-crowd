@@ -3,6 +3,7 @@ package crowd
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -45,6 +46,16 @@ type GroupInfo struct {
 			Rel  string `json:"rel"`
 		} `json:"link"`
 	} `json:"attributes"`
+}
+
+// Memberships returns all memberships
+type Memberships struct {
+        Membership      []Membership    `xml:"membership"`
+}
+
+// Membership returns all membership
+type Membership struct {
+        Group   string  `xml:"group,attr"`
 }
 
 // GetGroups retrieves a list of groups of which a user is a direct (and nested if donested is true) member.
@@ -208,5 +219,45 @@ func (c *Crowd ) DeleteGroup(name string) (status bool) {
 	}
 
 	return status
+
+}
+
+// GetGroupMembership returns a group
+func (c *Crowd) GetGroupMembership() (*Memberships) {
+
+	url := c.url + "rest/usermanagement/1/group/membership"
+
+	c.Client.Jar = c.cookies
+
+	req, err := http.NewRequest("GET", url, nil)
+	req.SetBasicAuth(c.user, c.passwd)
+	req.Header.Set("Content-Type", "application/xml")
+	req.Header.Set("Accept", "application/xml")
+	if err != nil {
+		panic(err)
+	}
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	defer resp.Body.Close()
+
+	membership, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	membershipContent := bytes.NewReader(membership)
+	decoder := xml.NewDecoder(membershipContent)
+
+	memberships := new(Memberships)
+	err = decoder.Decode(&memberships)
+	if err != nil {
+		panic(err)
+	}
+
+	return memberships
 
 }
