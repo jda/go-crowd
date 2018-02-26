@@ -176,3 +176,37 @@ func (c *Crowd) CreateGroup(name string, description string) (status bool) {
 	return status
 
 }
+
+// DeleteGroup deletes a group
+func (c *Crowd ) DeleteGroup(name string) (status bool) {
+
+	deleteURL := fmt.Sprintf("rest/usermanagement/1/group?groupname=%s", name)
+	url := c.url + deleteURL
+
+	c.Client.Jar = c.cookies
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	req.SetBasicAuth(c.user, c.passwd)
+	// req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(req)
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 204:
+		status = true
+	default:
+		fmt.Printf("request failed: %s\n", resp.Status)
+	}
+
+	return status
+
+}

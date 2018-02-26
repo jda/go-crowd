@@ -100,3 +100,23 @@ func TestGetGroup(t *testing.T) {
 	}
 
 }
+
+func TestDeleteGroup(t *testing.T) {
+	tv := PrepVars(t)
+	c, err := New(tv.AppUsername, tv.AppPassword, tv.AppURL)
+	if err != nil {
+		t.Error(err)
+	}
+
+	user := os.Getenv("APP_USER_USERNAME")
+	if user == "" {
+		t.Skip("Can't run test because APP_USER_USERNAME undefined")
+	}
+
+	status := c.DeleteGroup("test")
+	if !status {
+		t.Error("Expected a group to be deleted")
+	}
+
+}
+
