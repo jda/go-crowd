@@ -108,7 +108,7 @@ func (c *Crowd) GetDirectGroups(user string) ([]*Group, error) {
 }
 
 // GetGroup returns a group
-func (c *Crowd) GetGroup(name string) (*Group, error) {
+func (c *Crowd) GetGroup(name string) (*GroupInfo, error) {
 	attrURL := fmt.Sprintf("rest/usermanagement/1/group?groupname=%s&expand=attributes", name)
 	url := c.url + attrURL
 
@@ -133,7 +133,7 @@ func (c *Crowd) GetGroup(name string) (*Group, error) {
 		panic(err)
 	}
 
-	groupAttributes := new(Group)
+	groupAttributes := new(GroupInfo)
 	err = json.Unmarshal(groupInformation, groupAttributes)
 	if err != nil {
 		panic(err)
