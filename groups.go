@@ -3,6 +3,7 @@ package crowd
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -45,6 +46,16 @@ type GroupInfo struct {
 			Rel  string `json:"rel"`
 		} `json:"link"`
 	} `json:"attributes"`
+}
+
+// Memberships returns all memberships
+type Memberships struct {
+        Membership      []Membership    `xml:"membership"`
+}
+
+// Membership returns all membership
+type Membership struct {
+        Group   string  `xml:"group,attr"`
 }
 
 // GetGroups retrieves a list of groups of which a user is a direct (and nested if donested is true) member.
@@ -108,7 +119,7 @@ func (c *Crowd) GetDirectGroups(user string) ([]*Group, error) {
 }
 
 // GetGroup returns a group
-func (c *Crowd) GetGroup(name string) (*Group, error) {
+func (c *Crowd) GetGroup(name string) (*GroupInfo, error) {
 	attrURL := fmt.Sprintf("rest/usermanagement/1/group?groupname=%s&expand=attributes", name)
 	url := c.url + attrURL
 
@@ -133,7 +144,7 @@ func (c *Crowd) GetGroup(name string) (*Group, error) {
 		panic(err)
 	}
 
-	groupAttributes := new(Group)
+	groupAttributes := new(GroupInfo)
 	err = json.Unmarshal(groupInformation, groupAttributes)
 	if err != nil {
 		panic(err)
@@ -174,5 +185,79 @@ func (c *Crowd) CreateGroup(name string, description string) (status bool) {
 	}
 
 	return status
+
+}
+
+// DeleteGroup deletes a group
+func (c *Crowd ) DeleteGroup(name string) (status bool) {
+
+	deleteURL := fmt.Sprintf("rest/usermanagement/1/group?groupname=%s", name)
+	url := c.url + deleteURL
+
+	c.Client.Jar = c.cookies
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	req.SetBasicAuth(c.user, c.passwd)
+	// req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(req)
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 204:
+		status = true
+	default:
+		fmt.Printf("request failed: %s\n", resp.Status)
+	}
+
+	return status
+
+}
+
+// GetGroupMembership returns a group
+func (c *Crowd) GetGroupMembership() (*Memberships) {
+
+	url := c.url + "rest/usermanagement/1/group/membership"
+
+	c.Client.Jar = c.cookies
+
+	req, err := http.NewRequest("GET", url, nil)
+	req.SetBasicAuth(c.user, c.passwd)
+	req.Header.Set("Content-Type", "application/xml")
+	req.Header.Set("Accept", "application/xml")
+	if err != nil {
+		panic(err)
+	}
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	defer resp.Body.Close()
+
+	membership, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	membershipContent := bytes.NewReader(membership)
+	decoder := xml.NewDecoder(membershipContent)
+
+	memberships := new(Memberships)
+	err = decoder.Decode(&memberships)
+	if err != nil {
+		panic(err)
+	}
+
+	return memberships
 
 }
