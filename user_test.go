@@ -30,3 +30,28 @@ func TestGetUser(t *testing.T) {
 	}
 
 }
+
+func TestGetUserByEmail(t *testing.T) {
+	tv := PrepVars(t)
+	c, err := New(tv.AppUsername, tv.AppPassword, tv.AppURL)
+	if err != nil {
+		t.Error(err)
+	}
+
+	email := os.Getenv("APP_USER_EMAIL")
+	if email == "" {
+		t.Skip("Can't run test because APP_USER_EMAIL undefined")
+	}
+
+	// test get by email
+	u, err := c.GetUserByEmail(email)
+	if err != nil {
+		t.Errorf("Error getting user info by email: %s\n", err)
+	} else {
+		t.Logf("Got user info by email: %+v\n", u)
+	}
+
+	if u.UserName == "" {
+		t.Errorf("username was empty so we didn't get/decode a response from GetUserByEmail")
+	}
+}

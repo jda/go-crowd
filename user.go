@@ -62,3 +62,74 @@ func (c *Crowd) GetUser(user string) (User, error) {
 
 	return u, nil
 }
+
+// GetUserByEmail searches for a user by email
+func (c *Crowd) GetUserByEmail(email string) (User, error) {
+	u := User{}
+
+	names, err := c.SearchUsers("email=" + email)
+	if err != nil {
+		return u, err
+	}
+
+	switch len(names) {
+	case 1:
+		return c.GetUser(names[0])
+	case 0:
+		return u, fmt.Errorf("user not found")
+	default:
+		return u, fmt.Errorf("multiple users found")
+	}
+}
+
+// SearchUsers retrieves a slice of user names that match the given search restriction (as Crowd Query Language)
+func (c *Crowd) SearchUsers(restriction string) ([]string, error) {
+	var names []string
+
+	v := url.Values{}
+	v.Set("entity-type", "user")
+	v.Set("restriction", restriction)
+	url := c.url + "rest/usermanagement/1/search?" + v.Encode()
+	c.Client.Jar = c.cookies
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return names, nil
+	}
+	req.SetBasicAuth(c.user, c.passwd)
+	req.Header.Set("Accept", "application/xml")
+	req.Header.Set("Content-Type", "application/xml")
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return names, err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 200:
+		// fall through switch without returning
+	default:
+		return names, fmt.Errorf("request failed: %s", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return names, err
+	}
+
+	r := struct{
+		Users      []struct{
+			Name      string `xml:"name,attr"`
+		} `xml:"user"`
+	}{}
+
+	err = xml.Unmarshal(body, &r)
+	if err != nil {
+		return names, err
+	}
+
+	for _, u := range r.Users {
+		names = append(names, u.Name)
+	}
+
+	return names, nil
+}
