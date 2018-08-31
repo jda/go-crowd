@@ -6,6 +6,7 @@ package crowd
 import (
 	"net/http"
 	"net/http/cookiejar"
+	"strings"
 )
 
 // Crowd represents your Crowd (client) Application settings
@@ -19,14 +20,16 @@ type Crowd struct {
 
 // New initializes & returns a Crowd object.
 func New(appuser string, apppass string, baseurl string) (Crowd, error) {
+	if !strings.HasSuffix(baseurl, "/") {
+		baseurl += "/"
+	}
+
 	cr := Crowd{
 		Client: http.DefaultClient,
 		user:   appuser,
 		passwd: apppass,
 		url:    baseurl,
 	}
-
-	// TODO make sure URL ends with '/'
 
 	cj, err := cookiejar.New(nil)
 	if err != nil {
